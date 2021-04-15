@@ -40,7 +40,7 @@ Workbook$methods(writeData = function(df, sheet, startRow, startCol, colNames, c
     for (i in dInds) {
       df[[i]] <- as.integer(df[[i]]) + origin
       if (origin == 25569L){
-        earlyDate <- df[[i]] < 60
+        earlyDate <- which(df[[i]] < 60)
         df[[i]][earlyDate] <- df[[i]][earlyDate] - 1
       }
     }
@@ -58,7 +58,7 @@ Workbook$methods(writeData = function(df, sheet, startRow, startCol, colNames, c
       offSet <- lapply(t, parseOffset)
       offSet <- lapply(offSet, function(x) ifelse(is.na(x), 0, x))
 
-      for (i in 1:length(pInds)) {
+      for (i in seq_along(pInds)) {
         df[[pInds[i]]] <- as.numeric(as.POSIXct(df[[pInds[i]]])) / 86400 + origin + offSet[[i]]
       }
     }
@@ -146,8 +146,8 @@ Workbook$methods(writeData = function(df, sheet, startRow, startCol, colNames, c
   v <- as.character(t(as.matrix(
     data.frame(df, stringsAsFactors = FALSE, check.names = FALSE, fix.empty.names = FALSE)
   )))
-
-
+  
+  
   if (keepNA) {
     if (is.null(na.string)) {
       t[is.na(v)] <- 4L
@@ -227,7 +227,7 @@ Workbook$methods(writeData = function(df, sheet, startRow, startCol, colNames, c
       } ## this is text to display instead of hyperlink
 
       ## create hyperlink objects
-      newhl <- lapply(1:length(hyperlink_inds), function(i) {
+      newhl <- lapply(seq_along(hyperlink_inds), function(i) {
         Hyperlink$new(ref = hyperlink_refs[i], target = targets[i], location = NULL, display = NULL, is_external = TRUE)
       })
 
@@ -246,6 +246,33 @@ Workbook$methods(writeData = function(df, sheet, startRow, startCol, colNames, c
   newStrs <- v[strFlag]
   if (length(newStrs) > 0) {
     newStrs <- replaceIllegalCharacters(newStrs)
+    vl <- stri_length(newStrs)
+    
+    for (i in which(vl > 32767)) {
+      
+      if(vl[i]>32768+30){
+        warning(
+          paste0(
+            stri_sub(newStrs[i], 32768, 32768 + 15),
+            " ... " ,
+            stri_sub(newStrs[i], vl[i] - 15, vl[i]),
+            " is truncated. 
+Number of characters exeed the limit of 32767."
+          )
+        )
+      } else {
+        warning(
+          paste0(
+            stri_sub(newStrs[i], 32768, -1),
+            " is truncated. 
+Number of characters exeed the limit of 32767."
+          )
+        )
+        
+      }
+      
+      # v[i] <- stri_sub(v[i], 1, 32767)
+    }
     newStrs <- stri_join("<si><t xml:space=\"preserve\">", newStrs, "</t></si>")
 
     uNewStr <- unique(newStrs)

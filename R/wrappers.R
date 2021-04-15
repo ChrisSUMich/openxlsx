@@ -594,7 +594,8 @@ convertFromExcelRef <- function(col) {
   if (any(charFlag)) {
     col[charFlag] <- gsub("[0-9]", "", col[charFlag])
     d <- lapply(strsplit(col[charFlag], split = ""), function(x) match(rev(x), LETTERS))
-    col[charFlag] <- unlist(lapply(1:length(d), function(i) sum(d[[i]] * (26^(0:(length(d[[i]]) - 1L))))))
+    col[charFlag] <- unlist(lapply(seq_along(d), function(i) sum(d[[i]] * (26^(
+      seq_along(d[[i]]) - 1)))))
   }
   
   col[!charFlag] <- as.integer(col[!charFlag])
@@ -863,7 +864,7 @@ createStyle <- function(fontName = NULL,
   
   ## background fill
   if (is.null(bgFill)) {
-    bgFillList <- NULL
+    # bgFillList <- NULL variable not used
   } else {
     bgFill <- validateColour(bgFill, "Invalid bgFill colour")
     style$fill <- append(style$fill, list(fillBg = list("rgb" = bgFill)))
@@ -871,7 +872,7 @@ createStyle <- function(fontName = NULL,
   
   ## foreground fill
   if (is.null(fgFill)) {
-    fgFillList <- NULL
+    # fgFillList <- NULL variable not used
   } else {
     fgFill <- validateColour(fgFill, "Invalid fgFill colour")
     style$fill <- append(style$fill, list(fillFg = list(rgb = fgFill)))
@@ -2343,7 +2344,7 @@ protectWorksheet <- function(wb, sheet, protect = TRUE, password = NULL,
   }
   
   sheet <- wb$validateSheet(sheet)
-  xml <- wb$worksheets[[sheet]]$sheetProtection
+  # xml <- wb$worksheets[[sheet]]$sheetProtection variable not used
   
   props <- c()
   
@@ -2596,7 +2597,8 @@ convertToDate <- function(x, origin = "1900-01-01", ...) {
 #' ## 2014-07-01, 2014-06-30, 2014-06-29
 #' x <- c(41821.8127314815, 41820.8127314815, NA, 41819, NaN)
 #' convertToDateTime(x)
-#' convertToDateTime(x, tx = "Australia/Perth")
+#' convertToDateTime(x, tz = "Australia/Perth")
+#' convertToDateTime(x, tz = "UTC")
 convertToDateTime <- function(x, origin = "1900-01-01", ...) {
   sci_pen <- getOption("scipen")
   options("scipen" = 10000)
@@ -3019,8 +3021,9 @@ setHeader <- function(wb, text, position = "center") {
     stop("Text argument must be a character vector of length 1")
   }
   
-  sheet <- wb$validateSheet(1)
-  wb$headFoot$text[wb$headFoot$pos == position & wb$headFoot$head == "head"] <- as.character(text)
+  # sheet <- wb$validateSheet(1) variable not used
+  wb$headFoot$text[wb$headFoot$pos == position & wb$headFoot$head == "head"] <- 
+    as.character(text)
 }
 
 
@@ -3066,7 +3069,7 @@ setFooter <- function(wb, text, position = "center") {
     stop("Text argument must be a character vector of length 1")
   }
   
-  sheet <- wb$validateSheet(1)
+  # sheet <- wb$validateSheet(1) variable not used
   wb$headFoot$text[wb$headFoot$pos == position & wb$headFoot$head == "foot"] <- as.character(text)
 }
 
@@ -3438,7 +3441,7 @@ sheetVisibility <- function(wb) {
     return(invisible(wb))
   }
   
-  for (i in 1:length(wb$worksheets)) {
+  for (i in seq_along(wb$worksheets)) {
     wb$workbook$sheets[i] <- gsub(exState0[i], value[i], wb$workbook$sheets[i], fixed = TRUE)
   }
   
@@ -4599,4 +4602,51 @@ getCreators <- function(wb) {
   }
   
   return(wb$getCreators())
+}
+
+#' @name activeSheet
+#' @title Get/set active sheet of the workbook
+#' @author Philipp Schauberger
+#' @description Get and set active sheet of the workbook
+#' @param wb A workbook object
+#' @return return the active sheet of the workbook
+#' @examples
+#'
+#' wb <- createWorkbook()
+#' addWorksheet(wb, sheetName = "S1")
+#' addWorksheet(wb, sheetName = "S2")
+#' addWorksheet(wb, sheetName = "S3")
+#'
+#' activeSheet(wb) # default value is the first sheet active
+#' activeSheet(wb) <- 1 ## active sheet S1
+#' activeSheet(wb)
+#' activeSheet(wb) <- "S2" ## active sheet S2
+#' activeSheet(wb)
+#' @export
+activeSheet <- function(wb) {
+  if (!"Workbook" %in% class(wb)) {
+    stop("First argument must be a Workbook.")
+  }
+  
+  
+  return(wb$ActiveSheet)
+}
+
+#' @rdname activeSheet
+#' @param value index of the active sheet or name of the active sheet
+#' @export
+`activeSheet<-` <- function(wb, value) {
+  od <- getOption("OutDec")
+  options("OutDec" = ".")
+  on.exit(expr = options("OutDec" = od), add = TRUE)
+  
+  if (!"Workbook" %in% class(wb)) {
+    stop("First argument must be a Workbook.")
+  }
+  
+  
+  
+  invisible(wb$setactiveSheet(value))
+  
+  invisible(wb)
 }
